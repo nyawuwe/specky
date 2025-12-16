@@ -1,0 +1,28 @@
+# Source files
+src/
+*.ts
+
+# Tests
+tests/
+*.test.ts
+vitest.config.ts
+
+# Dev configs
+.eslintrc*
+.prettierrc*
+tsconfig.json
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts (keep dist/)
+*.log
+*.tgz
+
+# Docs (README is included)
+docs/

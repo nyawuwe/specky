@@ -1,0 +1,221 @@
+/**
+ * Swagger/OpenAPI Parser Module
+ * Parses OpenAPI 2.0 (Swagger) and OpenAPI 3.x specifications
+ */
+import SwaggerParser from '@apidevtools/swagger-parser';
+/**
+ * Check if spec is OpenAPI 3.x
+ */
+function isOpenAPIV3(spec) {
+    return 'openapi' in spec && typeof spec.openapi === 'string' && spec.openapi.startsWith('3.');
+}
+/**
+ * Check if spec is Swagger 2.0
+ */
+function isSwagger2(spec) {
+    return 'swagger' in spec && spec.swagger === '2.0';
+}
+/**
+ * Extract base URL from spec
+ */
+function extractBaseUrl(spec) {
+    if (isOpenAPIV3(spec)) {
+        const server = spec.servers?.[0];
+        return server?.url || 'http://localhost';
+    }
+    else if (isSwagger2(spec)) {
+        const scheme = spec.schemes?.[0] || 'https';
+        const host = spec.host || 'localhost';
+        const basePath = spec.basePath || '';
+        return `${scheme}://${host}${basePath}`;
+    }
+    return 'http://localhost';
+}
+/**
+ * Convert OpenAPI type to JSON Schema type
+ */
+function getJsonType(schema) {
+    if (!schema)
+        return 'string';
+    const type = schema.type;
+    if (type === 'integer')
+        return 'number';
+    return type || 'string';
+}
+/**
+ * Parse parameter from OpenAPI 2.0 or 3.x
+ */
+function parseParameter(param) {
+    // Get schema - in OpenAPI 3.x it's in param.schema, in Swagger 2.0 it's on the param itself
+    const rawSchema = 'schema' in param && param.schema ? param.schema : param;
+    const schema = rawSchema;
+    return {
+        name: param.name,
+        required: param.required || false,
+        description: param.description,
+        type: getJsonType(schema),
+        format: schema.format,
+        enum: schema.enum,
+        default: schema.default,
+    };
+}
+/**
+ * Parse request body from OpenAPI 3.x
+ */
+function parseRequestBody(requestBody) {
+    if (!requestBody)
+        return undefined;
+    const content = requestBody.content;
+    const contentType = Object.keys(content)[0] || 'application/json';
+    const mediaType = content[contentType];
+    return {
+        required: requestBody.required || false,
+        description: requestBody.description,
+        contentType,
+        schema: mediaType?.schema || {},
+    };
+}
+/**
+ * Parse body parameter from Swagger 2.0
+ */
+function parseBodyParam(params) {
+    const bodyParam = params.find((p) => p.in === 'body');
+    if (!bodyParam)
+        return undefined;
+    return {
+        required: bodyParam.required || false,
+        description: bodyParam.description,
+        contentType: 'application/json',
+        schema: bodyParam.schema || {},
+    };
+}
+/**
+ * Parse responses from OpenAPI spec
+ */
+function parseResponses(responses) {
+    const result = [];
+    for (const [statusCode, response] of Object.entries(responses)) {
+        if (!response || typeof response !== 'object')
+            continue;
+        const resp = response;
+        const content = resp.content;
+        const contentType = content ? Object.keys(content)[0] : undefined;
+        const schema = contentType && content ? content[contentType]?.schema : undefined;
+        result.push({
+            statusCode,
+            description: resp.description,
+            contentType,
+            schema,
+        });
+    }
+    return result;
+}
+/**
+ * Generate operation ID if not present
+ */
+function generateOperationId(method, path) {
+    // Convert /pets/{petId}/photos to getPetsPetIdPhotos
+    const cleanPath = path
+        .replace(/\{([^}]+)\}/g, (_, param) => param.charAt(0).toUpperCase() + param.slice(1))
+        .replace(/[^a-zA-Z0-9]/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map((word, i) => (i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()))
+        .join('');
+    return `${method.toLowerCase()}${cleanPath.charAt(0).toUpperCase()}${cleanPath.slice(1)}`;
+}
+/**
+ * Parse a single path operation
+ */
+function parseOperation(method, path, operation, pathParams, isV3) {
+    const allParams = [...pathParams, ...(operation.parameters || [])];
+    // Filter parameters by location
+    const pathParameters = allParams.filter((p) => p.in === 'path').map(parseParameter);
+    const queryParameters = allParams.filter((p) => p.in === 'query').map(parseParameter);
+    const headerParameters = allParams.filter((p) => p.in === 'header').map(parseParameter);
+    // Parse request body
+    let requestBody;
+    if (isV3) {
+        const v3Op = operation;
+        requestBody = parseRequestBody(v3Op.requestBody);
+    }
+    else {
+        requestBody = parseBodyParam(allParams);
+    }
+    // Parse security
+    const security = [];
+    if (operation.security) {
+        for (const sec of operation.security) {
+            security.push(...Object.keys(sec));
+        }
+    }
+    return {
+        operationId: operation.operationId || generateOperationId(method, path),
+        method: method,
+        path,
+        summary: operation.summary,
+        description: operation.description,
+        pathParams: pathParameters,
+        queryParams: queryParameters,
+        headerParams: headerParameters,
+        requestBody,
+        responses: parseResponses(operation.responses || {}),
+        tags: operation.tags || [],
+        security,
+    };
+}
+/**
+ * Parse OpenAPI/Swagger specification
+ * @param specPath - Path or URL to the spec file
+ * @returns Parsed spec with endpoints
+ */
+export async function parseSpec(specPath) {
+    // Parse and dereference the spec (resolves all $refs)
+    const api = await SwaggerParser.dereference(specPath);
+    const isV3 = isOpenAPIV3(api);
+    const info = api.info;
+    const baseUrl = extractBaseUrl(api);
+    const endpoints = [];
+    const paths = api.paths || {};
+    // Iterate through all paths
+    for (const [path, pathItem] of Object.entries(paths)) {
+        if (!pathItem || typeof pathItem !== 'object')
+            continue;
+        const item = pathItem;
+        const pathParams = (item.parameters || []);
+        // HTTP methods to check
+        const methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
+        for (const method of methods) {
+            const operation = item[method];
+            if (operation) {
+                endpoints.push(parseOperation(method, path, operation, pathParams, isV3));
+            }
+        }
+    }
+    return {
+        title: info.title,
+        version: info.version,
+        description: info.description,
+        baseUrl,
+        endpoints,
+    };
+}
+/**
+ * Load spec from URL or file path
+ */
+export async function loadSpec(specPath) {
+    return await SwaggerParser.parse(specPath);
+}
+/**
+ * Validate spec
+ */
+export async function validateSpec(specPath) {
+    try {
+        await SwaggerParser.validate(specPath);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+//# sourceMappingURL=swagger.js.map
