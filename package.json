@@ -1,5 +1,5 @@
 {
-  "name": "specky",
+  "name": "specky-mcp",
   "version": "1.0.0",
   "description": "🦔 Transform Swagger/OpenAPI specs into MCP servers for LLMs",
   "type": "module",

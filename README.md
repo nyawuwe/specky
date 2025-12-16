@@ -1,4 +1,4 @@
-# Specky 🦔
+# Specky
 
 <p align="center">
   <img src="./assets/logo.png" alt="Specky Logo" width="150" />
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/specky"><img src="https://img.shields.io/npm/v/specky.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/specky-mcp"><img src="https://img.shields.io/npm/v/specky-mcp.svg" alt="npm version"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
@@ -17,20 +17,20 @@
 
 Specky converts any Swagger/OpenAPI specification into a Model Context Protocol (MCP) server, enabling LLMs like Claude to interact with REST APIs intelligently.
 
-## ✨ Features
+## Features
 
-- 🔍 **Smart Search Mode** (default) - 2 meta-tools instead of 100+ tools
-- 🔄 **Full OpenAPI Support** - Swagger 2.0, OpenAPI 3.0 & 3.1
-- 🔐 **Multiple Auth Methods** - API Key, Bearer, Basic, OAuth2
-- 🎨 **Beautiful CLI** - Colors, spinners, ASCII art
-- 🎯 **Filtering Options** - By tags, path patterns
-- 📦 **Dual Usage** - CLI or library
+- **Smart Search Mode** (default) - 2 meta-tools instead of 100+ tools
+- **Full OpenAPI Support** - Swagger 2.0, OpenAPI 3.0 & 3.1
+- **Multiple Auth Methods** - API Key, Bearer, Basic, OAuth2
+- **Beautiful CLI** - Colors, spinners, ASCII art
+- **Filtering Options** - By tags, path patterns
+- **Dual Usage** - CLI or library
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Install globally
-npm install -g specky
+npm install -g specky-mcp
 
 # Start MCP server (search mode by default)
 specky https://petstore.swagger.io/v2/swagger.json
@@ -39,7 +39,7 @@ specky https://petstore.swagger.io/v2/swagger.json
 specky ./api.yaml --list --verbose
 ```
 
-## 🔍 Search Mode (Default)
+## Search Mode (Default)
 
 Instead of exposing all API endpoints as tools, Specky provides **2 intelligent meta-tools**:
 
@@ -67,7 +67,7 @@ Claude: [calls call_endpoint(endpoint_id="get_pet_pet_id", petId=123)]
 | Model confusion choosing tools | Natural language search |
 | Slow tool listing | Instant response |
 
-## 📋 CLI Options
+## CLI Options
 
 ```
 specky <spec> [options]
@@ -88,7 +88,7 @@ Options:
   -h, --help               Show help
 ```
 
-## 🔐 Authentication
+## Authentication
 
 ```bash
 # Bearer Token
@@ -101,7 +101,7 @@ specky api.yaml --auth apikey --key $KEY --header X-API-Key
 specky api.yaml --auth basic --username admin --password secret
 ```
 
-## 🎯 Filtering
+## Filtering
 
 ```bash
 # Only pet and store endpoints
@@ -114,7 +114,7 @@ specky api.yaml --include "^/api/v2"
 specky api.yaml --exclude "/admin"
 ```
 
-## 🔧 Claude Desktop Integration
+## Claude Desktop Integration
 
 Add to `claude_desktop_config.json`:
 
@@ -123,16 +123,16 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "my-api": {
       "command": "npx",
-      "args": ["specky", "https://api.example.com/swagger.json"]
+      "args": ["specky-mcp", "https://api.example.com/swagger.json"]
     }
   }
 }
 ```
 
-## 📦 Library Usage
+## Library Usage
 
 ```typescript
-import { createSearchModeServer } from 'specky';
+import { createSearchModeServer } from 'specky-mcp';
 
 const { server, tools, start } = await createSearchModeServer({
   spec: './swagger.json',
@@ -143,6 +143,6 @@ console.log(`Loaded ${tools.length} endpoints`);
 await start();
 ```
 
-## 📄 License
+## License
 
 MIT © 2024
