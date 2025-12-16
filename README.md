@@ -1,7 +1,7 @@
 # Specky
 
 <p align="center">
-  <img src="./assets/logo.png" alt="Specky Logo" width="150" />
+  <img src="https://raw.githubusercontent.com/nyawuwe/specky/main/assets/logo.png" alt="Specky Logo" width="150" />
 </p>
 
 <p align="center">

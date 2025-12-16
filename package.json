@@ -40,11 +40,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/specky.git"
+    "url": "https://github.com/nyawuwe/specky.git"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/specky#readme",
+  "homepage": "https://github.com/nyawuwe/specky#readme",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/specky/issues"
+    "url": "https://github.com/nyawuwe/specky/issues"
   },
   "dependencies": {
     "@apidevtools/swagger-parser": "^10.1.0",
